@@ -23,7 +23,6 @@ mongoose
 
 
 app.use('/api/users', users);
-
 app.use(passport.initialize());
 
 passportConfig(passport);

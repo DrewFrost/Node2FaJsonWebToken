@@ -20,7 +20,7 @@ const UserSchema = new Schema({
     },
     secret:{
         type: String,
-        required: false
+        required: true
     },
     date: {
         type: Date,

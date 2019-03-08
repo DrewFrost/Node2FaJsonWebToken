@@ -10,7 +10,6 @@ const keys = require('../../config/keys');
 
 
 const validateRegisterInput = require('../../validation/register');
-const validateLoginInput = require('../../validation/login');
 
 
 router.post('/register', async (req, res, next) => {
@@ -50,31 +49,25 @@ router.post('/register', async (req, res, next) => {
     }
 });
 
-router.post('/login', async (req, res) => {
-    const {errors, isValid} = validateLoginInput(req.body);
-    // Check validation
-    if (!isValid) {
-        return res.status(400).json(errors);
-    }
-    const email = req.body.email;
-    const password = req.body.password;
-    const token = req.body.token;
+router.post('/login', async (req, res, next) => {
+    const errors = {};
+
     //Finding user email
     try {
         const user = await User.findOne({
-            email
+            email: req.body.email
         });
         // User with that email doesn't exist
         if (!user) {
-            errors.email = "User not found!";
+            errors.login = "Invalid email or password";
             return res.status(404).json(errors);
         }
         //Check for user password
         else {
-            const isMatch = await bcrypt.compare(password, user.password);
-            const verify = authenticator.verifyToken(user.secret, token);
-            if (verify) {
-                if (isMatch) {
+            const isMatch = await bcrypt.compare(req.body.password, user.password);
+            const verify = authenticator.verifyToken(user.secret, req.body.token);
+            if (isMatch) {
+                if (verify) {
                     const payload = {id: user.id, name: user.name, avatar: user.avatar};//create jwt payload
                     //Sign token
                     const token = await jwt.sign(payload, keys.secretOrKey, {expiresIn: 3600});
@@ -82,20 +75,18 @@ router.post('/login', async (req, res) => {
                         success: true,
                         token: 'Bearer ' + token
                     });
-                }else
-                {
-                    errors.password = "Invalid password";
+                } else {
+                    errors.token = "Invalid token";
                     return res.status(400).json(errors);
                 }
             } else {
-                errors.token = "Invalid token";
+                errors.login = "Invalid email or password";
                 return res.status(400).json(errors);
             }
         }
         // User Entered Email and Password Correct
-    } catch
-        (err) {
-        console.log(err);
+    } catch (e) {
+        (!e.statusCode) ? (e.statusCode = 500) : next(e);
     }
 });
 
@@ -105,7 +96,7 @@ router.get('/current', passport.authenticate('jwt', {session: false}), (req, res
         id: req.user.id,
         firstname: req.user.firstname,
         lastname: req.user.lastname,
-        email: req.user.title
+        email: req.user.email
     });
 });
 
