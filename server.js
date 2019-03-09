@@ -3,13 +3,14 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const users = require('./routes/api/users');
+const morgan = require('morgan');
 const passportConfig = require('./config/passport');
 
 app = express();
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
-
+app.use(morgan("combined"));
 const db = require('./config/keys').mongoURI;
 
 // connect to mongodb
